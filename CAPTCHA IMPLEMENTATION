@@ -1,0 +1,70 @@
+Implements CAPTCHA.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login with reCAPTCHA</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+ 
+<?php
+// Process form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Your server-side validation logic here
+ 
+    // Validate reCAPTCHA
+    $recaptchaSecretKey = 'YOUR_SECRET_KEY';
+    $recaptchaResponse = $_POST['g-recaptcha-response'];
+    $url = 'https://www.google.com/recaptcha/api/siteverify';
+    $data = [
+        'secret' => $recaptchaSecretKey,
+        'response' => $recaptchaResponse,
+        'remoteip' => $_SERVER['REMOTE_ADDR'],
+    ];
+    
+    $options = [
+        'http' => [
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method' => 'POST',
+            'content' => http_build_query($data),
+        ],
+    ];
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    $resultData = json_decode($result, true);
+ 
+    if ($resultData['success']) {
+        // reCAPTCHA validation passed, process login
+        $username = $_POST['username'];
+        $password = $_POST['password'];
+ 
+        // Your login logic here
+ 
+        // Redirect or show a success message
+        header("Location: welcome.php");
+        exit();
+    } else {
+        // reCAPTCHA validation failed
+        echo "reCAPTCHA validation failed. Please try again.";
+    }
+}
+?>
+ 
+<h2>Login Form</h2>
+<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+    <label for="username">Username:</label>
+    <input type="text" name="username" required><br>
+ 
+    <label for="password">Password:</label>
+    <input type="password" name="password" required><br>
+ 
+    <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY"></div><br>
+ 
+    <input type="submit" value="Login">
+</form>
+ 
+</body>
+</html>
